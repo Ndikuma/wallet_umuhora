@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: number;
   username: string;
@@ -83,7 +84,7 @@ export interface FeeEstimation {
     sendable_usd: number;
     sendable_bif: number;
     network_fee_usd: number;
-    network_fee_bif: number;
+network_fee_bif: number;
 }
 
 export interface ProviderPaymentInfo {
@@ -235,6 +236,7 @@ export interface LightningPaymentResponse {
 export interface PayLightningRequestPayload {
   request: string;
   amount_sats?: number;
+  fee_sats?: number;
 }
 
 export interface DecodedLightningRequest {
@@ -247,7 +249,7 @@ export interface DecodedLightningRequest {
   payee_pubkey?: string | null;
   expires_at?: string | null;
   internal: boolean;
-  status?: 'unpaid' | 'paid' | 'cancelled' | 'expired';
+  status?: 'pending' | 'paid' | 'cancelled' | 'expired';
   created_at?: string | null;
   payment_hash?: string | null;
 }

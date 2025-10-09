@@ -31,6 +31,7 @@ import api from "@/lib/api";
 import { DecodedLightningRequest, LightningBalance } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getFiat } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 type PaymentStep = "input" | "confirm" | "success";
 
@@ -187,6 +188,8 @@ const StepConfirm = ({ request, onBack, onSuccess }: { request: string, onBack: 
     }, [request, toast]);
     
     const totalAmountSats = decoded?.amount_sats || Number(amountSats) || 0;
+    const feeSats = decoded?.fee_sats || 0;
+    const totalWithFees = totalAmountSats + feeSats;
 
     const handlePay = async () => {
         if (!decoded || totalAmountSats <= 0) {
@@ -198,6 +201,7 @@ const StepConfirm = ({ request, onBack, onSuccess }: { request: string, onBack: 
             await api.payLightningInvoice({
                 request,
                 amount_sats: totalAmountSats,
+                fee_sats: feeSats > 0 ? feeSats : undefined
              });
             toast({ title: "Paiement réussi !", description: "Votre paiement a été envoyé." });
             onSuccess();
@@ -218,7 +222,7 @@ const StepConfirm = ({ request, onBack, onSuccess }: { request: string, onBack: 
         </div>
     );
     
-    const hasSufficientBalance = lightningBalance ? lightningBalance.balance >= totalAmountSats : false;
+    const hasSufficientBalance = lightningBalance ? lightningBalance.balance >= totalWithFees : false;
     
     return (
         <Card>
@@ -264,18 +268,34 @@ const StepConfirm = ({ request, onBack, onSuccess }: { request: string, onBack: 
                                 )}
                             </div>
                         )}
-                        
-                        {!isBalanceLoading && lightningBalance && (
-                            <DetailRow icon={Wallet} label="Votre solde Lightning">
-                                <p className="font-semibold">{lightningBalance.balance} sats</p>
-                            </DetailRow>
-                        )}
 
-                        {totalAmountSats > 0 && !hasSufficientBalance && !isBalanceLoading && (
+                        {feeSats > 0 && (
+                            <Alert variant="warning">
+                                <Info className="h-4 w-4" />
+                                <AlertTitle>Frais de service</AlertTitle>
+                                <AlertDescription>
+                                    Cette transaction inclut des frais de service de <strong>{feeSats} sats</strong>.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        
+                        <div className="p-4 rounded-lg border bg-background">
+                            <div className="flex justify-between items-center text-sm mb-2">
+                                <p className="text-muted-foreground">Montant total à payer</p>
+                                <p className="font-semibold font-mono">{totalWithFees.toLocaleString('fr-FR')} sats</p>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between items-center text-sm mt-2">
+                                <p className="text-muted-foreground">Votre solde</p>
+                                <p className="font-semibold font-mono">{lightningBalance ? lightningBalance.balance.toLocaleString('fr-FR') : '---'} sats</p>
+                            </div>
+                        </div>
+
+                        {totalWithFees > 0 && !hasSufficientBalance && !isBalanceLoading && (
                              <Alert variant="destructive">
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertTitle>Solde insuffisant</AlertTitle>
-                                <AlertDescription>Vous n'avez pas assez de fonds pour effectuer ce paiement.</AlertDescription>
+                                <AlertDescription>Vous n'avez pas assez de fonds pour effectuer ce paiement (y compris les frais).</AlertDescription>
                             </Alert>
                         )}
                     </div>
@@ -283,7 +303,7 @@ const StepConfirm = ({ request, onBack, onSuccess }: { request: string, onBack: 
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
                 <Button variant="outline" onClick={onBack} disabled={isPaying}>Retour</Button>
-                <Button onClick={handlePay} disabled={isLoading || isBalanceLoading || !!error || isPaying || !hasSufficientBalance || totalAmountSats <= 0}>
+                <Button onClick={handlePay} disabled={isLoading || isBalanceLoading || !!error || isPaying || !hasSufficientBalance || totalWithFees <= 0}>
                     {isPaying ? <><Loader2 className="mr-2 size-4 animate-spin"/>Envoi...</> : "Payer"}
                 </Button>
             </CardFooter>
