@@ -236,7 +236,33 @@ const PayoutDetailItem = ({ icon, label, value }: { icon: React.ElementType, lab
     )
 }
 
-function LightningBuyOrderDetails({ order }: { order: Order }) {
+function LightningBuyOrderDetails({ order, onOrderUpdate }: { order: Order; onOrderUpdate: (updatedOrder: Order) => void }) {
+    const { toast } = useToast();
+    
+    useEffect(() => {
+        if (order.status === 'completed') {
+            return;
+        }
+
+        const intervalId = setInterval(async () => {
+            try {
+                const response = await api.getOrder(order.id);
+                if (response.data.status === 'completed') {
+                    onOrderUpdate(response.data);
+                    toast({
+                        title: "Paiement Reçu!",
+                        description: `Votre achat de ${response.data.ln_amount_sats} sats est terminé.`,
+                    });
+                    clearInterval(intervalId);
+                }
+            } catch (error) {
+                // Silent error
+            }
+        }, 3000); // Poll every 3 seconds
+
+        return () => clearInterval(intervalId);
+    }, [order, onOrderUpdate, toast]);
+
     return (
         <Card>
             <CardHeader>
@@ -270,7 +296,7 @@ function LightningBuyOrderDetails({ order }: { order: Order }) {
             </CardContent>
             <CardFooter>
                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
+                    <Clock className="h-4 w-4 animate-pulse" />
                     <AlertTitle>En attente du paiement</AlertTitle>
                     <AlertDescription>
                         Cette page se mettra à jour automatiquement une fois le paiement reçu.
@@ -289,7 +315,7 @@ function LightningSellOrderDetails({ order, onOrderUpdate }: { order: Order, onO
         if (!order.ln_invoice) return;
         setIsPaying(true);
         try {
-            const response = await api.payLightningInvoice({ request: order.ln_invoice });
+            const response = await api.payLightningInvoice({ request: order.ln_invoice, type: 'invoice' });
             onOrderUpdate(response.data.order);
             toast({ title: "Paiement réussi", description: `Vous avez payé ${response.data.amount_sats} sats.` });
         } catch (err: any) {
@@ -542,7 +568,7 @@ export default function OrderDetailsPage() {
 
             {order.direction === 'buy' && order.payment_method === 'on_chain' && order.status === 'pending' && <PaymentProofForm order={order} onSuccessfulSubmit={handleSuccessfulSubmit} />}
 
-            {order.direction === 'buy' && isLightning && order.status === 'pending' && <PaymentProofForm order={order} onSuccessfulSubmit={handleSuccessfulSubmit} />}
+            {order.direction === 'buy' && isLightning && order.status === 'pending' && <LightningBuyOrderDetails order={order} onOrderUpdate={setOrder} />}
 
             {order.direction === 'sell' && isLightning && order.status === 'pending' && <LightningSellOrderDetails order={order} onOrderUpdate={setOrder} />}
 

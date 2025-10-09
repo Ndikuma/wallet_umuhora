@@ -133,8 +133,8 @@ const getBuyProvider = (providerId: number): Promise<AxiosResponse<BuyProvider>>
 const getSellProviders = (payment_method?: 'on_chain' | 'lightning'): Promise<AxiosResponse<SellProvider[]>> => {
     return axiosInstance.get('providers/sell/', { params: { payment_method } });
 }
-const calculateBuyFee = (providerId: number, amount: number, currency: string): Promise<AxiosResponse<BuyFeeCalculation>> => {
-    return axiosInstance.post('providers/buy/calculate-fee/', { provider_id: providerId, amount: String(amount), currency });
+const calculateBuyFee = (providerId: number, amount: number, currency: string, paymentMethod: 'on_chain' | 'lightning'): Promise<AxiosResponse<BuyFeeCalculation>> => {
+    return axiosInstance.post('providers/buy/calculate-fee/', { provider_id: providerId, amount: String(amount), currency, payment_method: paymentMethod });
 }
 
 // --- Orders ---
