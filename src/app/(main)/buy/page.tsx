@@ -31,6 +31,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type Step = "network" | "provider" | "amount" | "confirm";
 
@@ -55,6 +56,8 @@ export default function BuyPage() {
     const [calcError, setCalcError] = useState<string | null>(null);
     
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const providerForm = useForm<{providerId: string}>();
 
 
     const fetchProviders = useCallback(async (net: "on_chain" | "lightning") => {
@@ -180,19 +183,17 @@ export default function BuyPage() {
     );
 
     const renderProviderStep = () => {
-        const form = useForm<{providerId: string}>();
-
         return (
             <Card>
                 <CardHeader><CardTitle>Étape 2: Choisissez un fournisseur</CardTitle><CardDescription>Sélectionnez un fournisseur pour votre achat via {network === 'on_chain' ? 'On-Chain' : 'Lightning'}.</CardDescription></CardHeader>
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(({providerId}) => handleProviderSelect(providers.find(p => p.id === parseInt(providerId))!))}>
+                <Form {...providerForm}>
+                <form onSubmit={providerForm.handleSubmit(({providerId}) => handleProviderSelect(providers.find(p => p.id === parseInt(providerId))!))}>
                     <CardContent>
                         {isLoadingProviders && <div className="flex justify-center h-40 items-center"><Loader2 className="animate-spin" /></div>}
                         {providerError && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>Erreur</AlertTitle><AlertDescription>{providerError}</AlertDescription></Alert>}
                         {!isLoadingProviders && !providerError && (
                              <FormField
-                                control={form.control}
+                                control={providerForm.control}
                                 name="providerId"
                                 rules={{ required: "Veuillez sélectionner un fournisseur."}}
                                 render={({ field }) => (
@@ -310,10 +311,13 @@ export default function BuyPage() {
                             {network === 'lightning' ? `${feeCalc.sats_amount} sats` : `${feeCalc.btc_amount} BTC`}
                         </span></div>
                     </div>
-                     <AlertCircle className="text-muted-foreground" />
-                     <AlertDescription>
-                        En cliquant sur "Créer la commande", une commande sera créée. Vous devrez ensuite effectuer le paiement selon les instructions du fournisseur.
-                    </AlertDescription>
+                     <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Note</AlertTitle>
+                        <AlertDescription>
+                            En cliquant sur "Créer la commande", une commande sera créée. Vous devrez ensuite effectuer le paiement selon les instructions du fournisseur.
+                        </AlertDescription>
+                    </Alert>
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleCreateOrder} disabled={isSubmitting} className="w-full" size="lg">
@@ -336,3 +340,5 @@ export default function BuyPage() {
         </div>
     );
 }
+
+    
