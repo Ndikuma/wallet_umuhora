@@ -38,7 +38,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 
-const formSchema = (balance: number) => z.object({
+const createFormSchema = (balance: number, fee: number) => z.object({
   recipient: z
     .string()
     .min(26, { message: "L'adresse Bitcoin est trop courte." })
@@ -46,10 +46,13 @@ const formSchema = (balance: number) => z.object({
   amount: z.coerce
     .number({invalid_type_error: "Veuillez entrer un nombre valide."})
     .positive({ message: "Le montant doit être supérieur à zéro." })
-    .max(balance, { message: `Solde insuffisant. Disponible : ${balance.toFixed(8)} BTC` }),
+    .max(balance, { message: `Solde insuffisant. Disponible : ${balance.toFixed(8)} BTC` })
+    .refine(amount => amount + fee <= balance, {
+        message: `Le solde est insuffisant pour couvrir le montant et les frais de réseau. Montant total requis: ${(balance + fee).toFixed(8)} BTC`,
+    }),
 });
 
-export type SendFormValues = z.infer<ReturnType<typeof formSchema>>;
+export type SendFormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 export function SendForm() {
   const { toast } = useToast();
@@ -68,9 +71,10 @@ export function SendForm() {
   const [feeError, setFeeError] = useState<string | null>(null);
   
   const currentBalance = balance ? parseFloat(balance.balance) : 0;
+  const networkFee = feeEstimation ? parseFloat(feeEstimation.network_fee_btc) : 0;
 
   const form = useForm<SendFormValues>({
-    resolver: zodResolver(formSchema(currentBalance)),
+    resolver: zodResolver(createFormSchema(currentBalance, networkFee)),
     defaultValues: { recipient: "", amount: undefined },
     mode: "onChange",
   });
@@ -106,11 +110,12 @@ export function SendForm() {
 
   useEffect(() => {
     const newBalance = balance ? parseFloat(balance.balance) : 0;
-    (form.control as any)._resolver = zodResolver(formSchema(newBalance));
+    const newFee = feeEstimation ? parseFloat(feeEstimation.network_fee_btc) : 0;
+    (form.control as any)._resolver = zodResolver(createFormSchema(newBalance, newFee));
      if (form.formState.isDirty) {
       form.trigger("amount");
     }
-  }, [balance, form]);
+  }, [balance, feeEstimation, form]);
 
    useEffect(() => {
     if (!isScanning) return;

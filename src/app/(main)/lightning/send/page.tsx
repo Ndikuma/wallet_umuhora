@@ -192,7 +192,8 @@ const StepConfirm = ({ request, onBack, onSuccess }: { request: string, onBack: 
     const totalWithFees = totalAmountSats + feeSats;
 
     const handlePay = async () => {
-        if (!decoded || totalAmountSats <= 0) {
+        if (!decoded) return;
+        if (totalAmountSats <= 0) {
             toast({ variant: "destructive", title: "Montant invalide", description: "Veuillez spécifier un montant supérieur à zéro." });
             return;
         }
@@ -296,7 +297,11 @@ const StepConfirm = ({ request, onBack, onSuccess }: { request: string, onBack: 
                              <Alert variant="destructive">
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertTitle>Solde insuffisant</AlertTitle>
-                                <AlertDescription>Vous n'avez pas assez de fonds pour effectuer ce paiement (y compris les frais).</AlertDescription>
+                                <AlertDescription>
+                                    Solde disponible: {lightningBalance?.balance.toLocaleString('fr-FR') || 0} sats.
+                                    <br/>
+                                    Total requis: {totalWithFees.toLocaleString('fr-FR')} sats.
+                                </AlertDescription>
                             </Alert>
                         )}
                     </div>

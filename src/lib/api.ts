@@ -36,7 +36,7 @@ const createResponseInterceptor = (instance: AxiosInstance) => {
       if (response.data && response.data.success === true) {
         return { ...response, data: response.data.data };
       }
-      if (response.data && response.data.message && !response.data.data) {
+      if (response.data && response.data.message) {
           return response;
       }
       return response;
@@ -52,11 +52,9 @@ const createResponseInterceptor = (instance: AxiosInstance) => {
             const apiError = responseData.error;
             const apiMessage = responseData.message;
 
+            // Special handling for login: if email is not verified, let the component handle it.
             if (apiMessage?.includes("Email not verified") && error.response.config.url?.endsWith('/auth/login/')) {
-                 // Don't treat "Email not verified" on login as a hard error.
-                 // The frontend will handle showing a verification prompt.
-                 // We still reject so the `catch` block in the form can execute, but with the original response.
-                 return Promise.reject(error);
+                 return Promise.reject(error); // Pass the original error to the component
             }
 
             if (typeof apiError === 'string') {
@@ -215,4 +213,3 @@ const api = {
 };
 
 export default api;
-

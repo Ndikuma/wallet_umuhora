@@ -20,7 +20,7 @@ import api from '@/lib/api';
 import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AxiosError } from "axios";
 
 const formSchema = z.object({
   identifier: z.string().min(1, { message: "Veuillez entrer votre e-mail ou nom d'utilisateur." }),
@@ -32,7 +32,6 @@ export function LoginForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [needsVerification, setNeedsVerification] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,10 +43,9 @@ export function LoginForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    setNeedsVerification(null);
     try {
       const response = await api.login(values);
-      const { token } = response.data;
+      const { token, message } = response.data;
       
       localStorage.setItem('authToken', token);
       document.cookie = `authToken=${token}; path=/; max-age=604800; samesite=lax`;
@@ -57,10 +55,29 @@ export function LoginForm() {
         description: "Bienvenue !",
       });
 
+      if (message && message.includes("Email not verified")) {
+          toast({
+            title: "Vérification de l'e-mail requise",
+            description: "Veuillez vérifier votre e-mail pour activer toutes les fonctionnalités.",
+            duration: 5000,
+          });
+      }
+
       router.push("/dashboard");
       router.refresh();
 
     } catch (error: any) {
+       if (error instanceof AxiosError && error.response?.data?.message?.includes("Email not verified")) {
+          const { token } = error.response.data.data;
+          if (token) {
+              localStorage.setItem('authToken', token);
+              document.cookie = `authToken=${token}; path=/; max-age=604800; samesite=lax`;
+              router.push(`/verify-email?email=${encodeURIComponent(values.identifier)}`);
+              router.refresh();
+              return;
+          }
+       }
+
         toast({
           variant: "destructive",
           title: "Échec de la connexion",
@@ -71,25 +88,8 @@ export function LoginForm() {
     }
   }
 
-  const handleGoToVerification = () => {
-    if (needsVerification) {
-      router.push(`/verify-email?email=${encodeURIComponent(needsVerification)}`);
-    }
-  };
-
   return (
     <Form {...form}>
-      {needsVerification && (
-        <Alert variant="warning" className="mb-4">
-          <AlertTitle>Vérification Requise</AlertTitle>
-          <AlertDescription>
-            Votre e-mail n'a pas été vérifié.
-            <Button variant="link" onClick={handleGoToVerification} className="p-0 h-auto ml-1">
-              Vérifiez votre e-mail pour continuer.
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
