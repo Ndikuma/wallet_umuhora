@@ -1,45 +1,36 @@
-
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ShieldCheck, Loader2 } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
-import { Skeleton } from "@/components/ui/skeleton";
-import { CopyButton } from "@/components/copy-button";
 
 export default function CreateWalletPage() {
   const { toast } = useToast();
-  const [mnemonic, setMnemonic] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [walletCreated, setWalletCreated] = useState(false);
 
-  const generateMnemonic = useCallback(async () => {
+  const createWallet = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.generateMnemonic();
-      setMnemonic(response.data.mnemonic);
-      localStorage.setItem("tempMnemonic", response.data.mnemonic);
-    } catch (error: any) {
-      const errorMsg =
-        error.response?.data?.error?.details?.detail ||
-        "Impossible de générer la phrase de récupération. Veuillez réessayer.";
+      await api.createWallet(); // <-- Your API POST endpoint
+      setWalletCreated(true);
+      toast({
+        title: "Portefeuille créé",
+        description: "Votre portefeuille a été créé avec succès.",
+      });
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.error || "Impossible de créer le portefeuille.";
       setError(errorMsg);
       toast({
         variant: "destructive",
-        title: "Échec de la création du portefeuille",
+        title: "Erreur",
         description: errorMsg,
       });
     } finally {
@@ -47,79 +38,45 @@ export default function CreateWalletPage() {
     }
   }, [toast]);
 
-  useEffect(() => {
-    generateMnemonic();
-  }, [generateMnemonic]);
-
-  const mnemonicWords = mnemonic?.split(" ") || Array(12).fill(null);
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
-      <Card className="w-full max-w-2xl">
+      <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Votre phrase de récupération</CardTitle>
+          <CardTitle className="text-2xl">Créer un portefeuille</CardTitle>
           <CardDescription>
-            Ces 12 mots sont le seul moyen de récupérer votre portefeuille.
-            <br />
-            Écrivez-les et conservez-les dans un endroit sûr, hors ligne.
+            Cliquez sur le bouton ci-dessous pour créer votre portefeuille.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <Alert variant="destructive" className="bg-destructive/10">
-            <ShieldCheck className="h-4 w-4" />
-            <AlertTitle>Ne partagez jamais ces mots !</AlertTitle>
-            <AlertDescription>
-              Toute personne possédant ces mots peut voler vos Bitcoins. Ne les stockez pas en ligne.
-            </AlertDescription>
-          </Alert>
-          <div className="rounded-lg border bg-background p-6">
-            {loading ? (
-              <div className="grid grid-cols-2 gap-x-12 gap-y-4 font-code text-lg sm:grid-cols-3">
-                {Array.from({ length: 12 }).map((_, index) => (
-                  <Skeleton key={index} className="h-6 w-24" />
-                ))}
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center text-center text-destructive">
-                <AlertCircle className="mb-2 size-8" />
-                <p className="font-semibold">Erreur de génération des mots</p>
-                <p className="text-sm">{error}</p>
-                <Button
-                  onClick={generateMnemonic}
-                  variant="secondary"
-                  className="mt-4"
-                >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Réessayer
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-x-12 gap-y-4 font-code text-lg sm:grid-cols-3">
-                {mnemonicWords.map((word, index) => (
-                  <div key={index} className="flex items-baseline">
-                    <span className="mr-3 text-sm text-muted-foreground">
-                      {index + 1}.
-                    </span>
-                    <span>{word}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <CopyButton
-            textToCopy={mnemonic || ""}
-            disabled={loading || !mnemonic || !!error}
-            variant="outline"
-            toastMessage="Phrase de récupération copiée"
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Erreur</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          {walletCreated && (
+            <Alert variant="success" className="mb-4">
+              <AlertTitle>Succès</AlertTitle>
+              <AlertDescription>Votre portefeuille a été créé avec succès.</AlertDescription>
+            </Alert>
+          )}
+          <Button
+            onClick={createWallet}
+            disabled={loading || walletCreated}
+            className="w-full"
           >
-            Copier les mots
-          </CopyButton>
-        </CardContent>
-        <CardFooter>
-          <Button asChild className="w-full" size="lg" disabled={loading || !!error || !mnemonic}>
-            <Link href="/verify-mnemonic">Je les ai notés</Link>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {walletCreated ? "Portefeuille créé" : "Créer le portefeuille"}
           </Button>
-        </CardFooter>
+        </CardContent>
+        {walletCreated && (
+          <CardFooter>
+            <Button asChild className="w-full" size="lg">
+              <Link href="/wallet-dashboard">Accéder au portefeuille</Link>
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     </div>
   );
