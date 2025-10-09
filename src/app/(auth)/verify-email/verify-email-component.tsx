@@ -78,6 +78,19 @@ export function VerifyEmailComponent() {
     defaultValues: { otp: "" },
   });
 
+  const handleSkip = () => {
+    if (is2FALogin) {
+        if (nextPage === 'dashboard') {
+          router.push("/dashboard");
+        } else {
+          router.push("/lightning");
+        }
+    } else {
+        router.push("/lightning");
+    }
+    router.refresh();
+  }
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!email) return;
 
@@ -175,10 +188,15 @@ export function VerifyEmailComponent() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Vérifier & Continuer
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Vérifier & Continuer
+                </Button>
+                <Button type="button" variant="secondary" className="w-full" onClick={handleSkip}>
+                    Vérifier plus tard
+                </Button>
+              </div>
             </form>
           </Form>
            <div className="mt-4 text-center text-sm">
