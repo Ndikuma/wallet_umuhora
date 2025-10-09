@@ -201,7 +201,8 @@ const StepConfirm = ({ request, onBack, onSuccess }: { request: string, onBack: 
             await api.payLightningInvoice({
                 request,
                 amount_sats: totalAmountSats,
-                fee_sats: feeSats > 0 ? feeSats : undefined
+                fee_sats: feeSats > 0 ? feeSats : undefined,
+                type: decoded.type,
              });
             toast({ title: "Paiement réussi !", description: "Votre paiement a été envoyé." });
             onSuccess();

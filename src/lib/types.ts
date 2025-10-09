@@ -237,6 +237,7 @@ export interface PayLightningRequestPayload {
   request: string;
   amount_sats?: number;
   fee_sats?: number;
+  type?: 'invoice' | 'lnurl' | 'ln_address';
 }
 
 export interface DecodedLightningRequest {
