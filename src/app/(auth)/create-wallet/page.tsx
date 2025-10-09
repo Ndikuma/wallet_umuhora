@@ -56,7 +56,7 @@ export default function CreateWalletPage() {
             </Alert>
           )}
           {walletCreated && (
-            <Alert variant="success" className="mb-4">
+            <Alert variant="default" className="mb-4 border-green-500 bg-green-50 text-green-700">
               <AlertTitle>Succès</AlertTitle>
               <AlertDescription>Votre portefeuille a été créé avec succès.</AlertDescription>
             </Alert>
@@ -73,7 +73,7 @@ export default function CreateWalletPage() {
         {walletCreated && (
           <CardFooter>
             <Button asChild className="w-full" size="lg">
-              <Link href="/wallet-dashboard">Accéder au portefeuille</Link>
+              <Link href="/dashboard">Accéder au portefeuille</Link>
             </Button>
           </CardFooter>
         )}
