@@ -229,13 +229,15 @@ export default function BuyWithProviderPage() {
   }, [provider]);
 
   useEffect(() => {
-    if (debouncedAmount > 0 && watchedCurrency && watchedPaymentMethod && form.formState.isValid) {
+    const isAmountValid = debouncedAmount > 0 && form.getFieldState('amount').error === undefined;
+    
+    if (isAmountValid && watchedCurrency && watchedPaymentMethod) {
       calculateFee(debouncedAmount, watchedCurrency, watchedPaymentMethod);
     } else {
       setFeeCalc(null);
       setCalcError(null);
     }
-  }, [debouncedAmount, watchedCurrency, watchedPaymentMethod, form.formState.isValid, calculateFee]);
+  }, [debouncedAmount, watchedCurrency, watchedPaymentMethod, form, calculateFee]);
 
   const onSubmit = async (data: BuyFormValues) => {
     if (!provider || !feeCalc) {
@@ -447,3 +449,5 @@ export default function BuyWithProviderPage() {
     </div>
   );
 }
+
+    
