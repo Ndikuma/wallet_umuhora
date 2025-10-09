@@ -33,14 +33,10 @@ axiosInstance.interceptors.request.use((config) => {
 
 const createResponseInterceptor = (instance: AxiosInstance) => {
     const onResponse = (response: AxiosResponse) => {
-      // The backend uses a consistent success wrapper, so we can unwrap the data here.
-      // However, some responses (like login) might have the data at the top level.
-      // We check for the `success` field to decide whether to unwrap.
       if (response.data && response.data.success === true) {
         return { ...response, data: response.data.data };
       }
       if (response.data && response.data.message && !response.data.data) {
-          // For simple success messages without data
           return response;
       }
       return response;
@@ -53,9 +49,15 @@ const createResponseInterceptor = (instance: AxiosInstance) => {
             errorMessage = 'Could not connect to the server. The service may be starting up. Please wait a moment and try again.';
         } else if (error.response?.data) {
             const responseData = error.response.data;
-            // The backend returns errors in a specific format.
             const apiError = responseData.error;
             const apiMessage = responseData.message;
+
+            if (apiMessage?.includes("Email not verified") && error.response.config.url?.endsWith('/auth/login/')) {
+                 // Don't treat "Email not verified" on login as a hard error.
+                 // The frontend will handle showing a verification prompt.
+                 // We still reject so the `catch` block in the form can execute, but with the original response.
+                 return Promise.reject(error);
+            }
 
             if (typeof apiError === 'string') {
               errorMessage = apiError;

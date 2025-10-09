@@ -42,17 +42,9 @@ export function VerifyEmailComponent() {
   const [isResending, setIsResending] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(0);
-  const [nextPage, setNextPage] = useState<string | null>(null);
-  const [is2FALogin, setIs2FALogin] = useState(false);
 
   useEffect(() => {
     const emailParam = searchParams.get('email');
-    const nextParam = searchParams.get('next');
-    if (nextParam) {
-      setNextPage(nextParam);
-      setIs2FALogin(true);
-    }
-
     if (emailParam) {
       setEmail(emailParam);
     } else {
@@ -79,15 +71,7 @@ export function VerifyEmailComponent() {
   });
 
   const handleSkip = () => {
-    if (is2FALogin) {
-        if (nextPage === 'dashboard') {
-          router.push("/dashboard");
-        } else {
-          router.push("/lightning");
-        }
-    } else {
-        router.push("/lightning");
-    }
+    router.push("/lightning");
     router.refresh();
   }
 
@@ -107,16 +91,7 @@ export function VerifyEmailComponent() {
         description: "Votre compte est maintenant actif et sécurisé.",
       });
       
-      if (is2FALogin) {
-        if (wallet_created) {
-          router.push("/dashboard");
-        } else {
-          router.push("/lightning");
-        }
-      } else {
-         // After initial registration, go to lightning page
-         router.push("/lightning");
-      }
+      router.push("/lightning");
       router.refresh();
 
     } catch (error: any) {

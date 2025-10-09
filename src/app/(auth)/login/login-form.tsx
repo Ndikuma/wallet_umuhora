@@ -61,15 +61,11 @@ export function LoginForm() {
       router.refresh();
 
     } catch (error: any) {
-      if (error.message?.includes("Email not verified")) {
-        setNeedsVerification(values.identifier);
-      } else {
         toast({
           variant: "destructive",
           title: "Échec de la connexion",
           description: error.message,
         });
-      }
     } finally {
         setIsLoading(false);
     }
