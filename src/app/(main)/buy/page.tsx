@@ -1,48 +1,173 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import api from "@/lib/api";
-import type { BuyProvider } from "@/lib/types";
+import type { BuyProvider, BuyFeeCalculation, BuyOrderPayload } from "@/lib/types";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
-  CardContent
+  CardContent,
+  CardFooter
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, AlertCircle, ArrowRight, Landmark, Loader2, Zap, Bitcoin } from "lucide-react";
+import { ArrowLeft, AlertCircle, ArrowRight, Landmark, Loader2, Zap, Bitcoin, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ProviderIcon } from "@/components/provider-icon";
+import { useForm } from "react-hook-form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
-const ProviderCard = ({ provider }: { provider: BuyProvider }) => (
-  <Link href={`/buy/${provider.id}`} className="block h-full transition-all rounded-lg hover:shadow-lg hover:-translate-y-1">
-    <Card className="h-full flex flex-col hover:border-primary/50">
-      <CardHeader className="flex-grow">
-        <div className="flex items-start gap-4">
-          <ProviderIcon provider={provider} />
-          <div className="flex-1">
-            <CardTitle>{provider.name}</CardTitle>
-            <CardDescription>{provider.description}</CardDescription>
-          </div>
-          <ArrowRight className="size-5 text-muted-foreground group-hover:text-primary transition-colors" />
-        </div>
-      </CardHeader>
-       <CardContent>
-          <div className="flex items-center gap-2">
-            {provider.supported_payment_methods?.map((method) => (
-                <div key={method} className="flex items-center gap-1 text-xs text-muted-foreground border rounded-full px-2 py-0.5">
-                    {method === 'on_chain' ? <Bitcoin className="size-3" /> : <Zap className="size-3" />}
-                    <span>{method === 'on_chain' ? 'On-Chain' : 'Lightning'}</span>
+
+const ProviderBuyCard = ({ provider, paymentMethod }: { provider: BuyProvider, paymentMethod: 'on_chain' | 'lightning' }) => {
+    const { toast } = useToast();
+    const router = useRouter();
+
+    const [feeCalc, setFeeCalc] = useState<BuyFeeCalculation | null>(null);
+    const [isCalculating, setIsCalculating] = useState(false);
+    const [calcError, setCalcError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const { register, watch, setValue } = useForm({
+      defaultValues: {
+        amount: '',
+        currency: provider.currencies[0] || 'BIF'
+      }
+    });
+
+    const watchedAmount = watch("amount");
+    const watchedCurrency = watch("currency");
+    const debouncedAmount = useDebounce(parseFloat(watchedAmount), 500);
+
+    const calculateFee = useCallback(async (amount: number, currency: string) => {
+        if (!provider || !currency) return;
+        setIsCalculating(true);
+        setCalcError(null);
+        try {
+            const response = await api.calculateBuyFee(provider.id, amount, currency, paymentMethod);
+            setFeeCalc(response.data);
+        } catch (err: any) {
+            setCalcError(err.message || "Impossible de calculer les frais.");
+            setFeeCalc(null);
+        } finally {
+            setIsCalculating(false);
+        }
+    }, [provider, paymentMethod]);
+
+    useEffect(() => {
+        if (debouncedAmount > 0 && watchedCurrency) {
+            calculateFee(debouncedAmount, watchedCurrency);
+        } else {
+            setFeeCalc(null);
+            setCalcError(null);
+        }
+    }, [debouncedAmount, watchedCurrency, calculateFee]);
+
+     const handleCreateOrder = async () => {
+        if (!feeCalc) {
+            toast({ variant: 'destructive', title: 'Erreur', description: 'Le calcul des frais n\'est pas terminé.' });
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const orderPayload: BuyOrderPayload = {
+                direction: 'buy',
+                payment_method: paymentMethod,
+                provider_id: provider.id,
+                amount: parseFloat(watchedAmount),
+                amount_currency: watchedCurrency,
+                btc_amount: feeCalc.btc_amount ? parseFloat(feeCalc.btc_amount) : undefined,
+                ln_amount_sats: feeCalc.sats_amount ? parseInt(feeCalc.sats_amount) : undefined,
+            };
+
+            const createdOrder = await api.createBuyOrder(orderPayload);
+            toast({ title: 'Commande créée', description: `Votre commande #${createdOrder.data.id} a été créée.` });
+            router.push(`/orders/${createdOrder.data.id}`);
+
+        } catch (err: any) {
+            toast({ variant: 'destructive', title: 'Échec de la commande', description: err.message || 'Impossible de créer votre commande.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+
+    return (
+        <Card className="flex flex-col">
+            <CardHeader>
+                <div className="flex items-start gap-4">
+                <ProviderIcon provider={provider} />
+                <div className="flex-1">
+                    <CardTitle>{provider.name}</CardTitle>
+                    <CardDescription>{provider.description}</CardDescription>
                 </div>
-            ))}
-        </div>
-      </CardContent>
-    </Card>
-  </Link>
-);
+                </div>
+            </CardHeader>
+            <CardContent className="flex-grow space-y-4">
+                 <div className="flex items-center gap-2">
+                    <Input 
+                        type="number" 
+                        placeholder="Montant" 
+                        {...register('amount')}
+                        className="h-11 text-base"
+                    />
+                    <Select onValueChange={(val) => setValue('currency', val)} defaultValue={watchedCurrency}>
+                        <SelectTrigger className="h-11 w-32">
+                            <SelectValue placeholder="Devise" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {provider.currencies.map(c => <SelectItem key={c} value={c}>{c.toUpperCase()}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                 </div>
+                 
+                 {(isCalculating || feeCalc || calcError) && (
+                     <div className="space-y-2 rounded-lg border bg-secondary/30 p-3 text-sm">
+                        {isCalculating && <div className="flex items-center justify-center text-muted-foreground"><Loader2 className="mr-2 size-4 animate-spin" />Calcul...</div>}
+                        {calcError && <div className="text-center text-destructive">{calcError}</div>}
+                        {feeCalc && (
+                            <div className="space-y-2">
+                                <div className="flex justify-between font-bold">
+                                    <span className="text-muted-foreground">Vous recevrez environ:</span>
+                                    <span className="font-mono">
+                                        {paymentMethod === 'lightning' ? `${feeCalc.sats_amount} sats` : `${feeCalc.btc_amount} BTC`}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Total à payer:</span>
+                                    <span className="font-mono font-semibold">{feeCalc.total_amount} {feeCalc.currency}</span>
+                                </div>
+                            </div>
+                        )}
+                     </div>
+                 )}
+            </CardContent>
+            <CardFooter>
+                <Button 
+                    className="w-full" 
+                    size="lg"
+                    disabled={!feeCalc || isCalculating || isSubmitting}
+                    onClick={handleCreateOrder}
+                >
+                    {isSubmitting ? <Loader2 className="mr-2 size-4 animate-spin"/> : <ShoppingCart className="mr-2 size-5" />}
+                    {isSubmitting ? "Création..." : "Acheter"}
+                </Button>
+            </CardFooter>
+        </Card>
+    )
+}
 
 
 const ProviderList = ({ paymentMethod }: { paymentMethod: 'on_chain' | 'lightning' }) => {
@@ -56,7 +181,7 @@ const ProviderList = ({ paymentMethod }: { paymentMethod: 'on_chain' | 'lightnin
     try {
       const response = await api.getBuyProviders(paymentMethod);
       setProviders(response.data);
-    } catch (err: any) {
+    } catch (err: any)      {
       setError(err.message || `Échec du chargement des fournisseurs ${paymentMethod}. Veuillez réessayer plus tard.`);
     } finally {
       setLoading(false);
@@ -69,7 +194,7 @@ const ProviderList = ({ paymentMethod }: { paymentMethod: 'on_chain' | 'lightnin
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {Array.from({ length: 2 }).map((_, i) => (
           <Card key={i}>
               <CardHeader className="flex flex-row items-start gap-4">
@@ -79,6 +204,8 @@ const ProviderList = ({ paymentMethod }: { paymentMethod: 'on_chain' | 'lightnin
                       <Skeleton className="h-4 w-48" />
                     </div>
               </CardHeader>
+              <CardContent><Skeleton className="h-11 w-full" /></CardContent>
+              <CardFooter><Skeleton className="h-12 w-full" /></CardFooter>
           </Card>
         ))}
       </div>
@@ -103,10 +230,10 @@ const ProviderList = ({ paymentMethod }: { paymentMethod: 'on_chain' | 'lightnin
 
   return (
      <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {providers.length > 0 ? (
             providers.map((provider) => (
-              <ProviderCard key={provider.id} provider={provider} />
+              <ProviderBuyCard key={provider.id} provider={provider} paymentMethod={paymentMethod} />
             ))
           ) : (
             <Card className="col-span-full flex h-48 items-center justify-center">
@@ -152,12 +279,9 @@ export default function BuyPage() {
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="space-y-2">
         <Button variant="ghost" size="sm" className="-ml-4" onClick={() => setMethod(null)}><ArrowLeft className="mr-2 size-4" />Changer de méthode</Button>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Acheter des Bitcoins ({method === 'on_chain' ? 'On-Chain' : 'Lightning'})</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Étape 2: Acheter des Bitcoins ({method === 'on_chain' ? 'On-Chain' : 'Lightning'})</h1>
         <p className="text-muted-foreground">
-          {method === 'on_chain' 
-            ? "Choisissez un fournisseur pour payer et recevoir des Bitcoins dans votre portefeuille."
-            : "Choisissez un fournisseur pour acheter des sats via le Lightning Network."
-          }
+          Choisissez un fournisseur, entrez un montant, et cliquez sur "Acheter" pour créer votre commande.
         </p>
       </div>
 
@@ -166,3 +290,5 @@ export default function BuyPage() {
     </div>
   );
 }
+
+    
