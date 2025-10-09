@@ -53,11 +53,9 @@ export function RegisterForm() {
     } catch (error: any) {
        const errorDetails = error.response?.data?.error?.details;
        let errorMsg = "Une erreur inattendue est survenue.";
-       if (errorDetails && typeof errorDetails === 'string') {
-          errorMsg = errorDetails;
-       } else if (errorDetails && typeof errorDetails === 'object') {
+       if (errorDetails && typeof errorDetails === 'object') {
           errorMsg = errorDetails?.email?.[0] || errorDetails?.password?.[0] || errorDetails?.username?.[0] || error.response?.data?.message || "Une erreur inattendue est survenue.";
-       } else if (error.message) {
+       } else if (error.message && typeof error.message === 'string') {
           errorMsg = error.message;
        }
       
