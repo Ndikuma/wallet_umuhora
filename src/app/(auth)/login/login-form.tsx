@@ -45,7 +45,7 @@ export function LoginForm() {
     setIsLoading(true);
     try {
       const response = await api.login(values);
-      const { token, message } = response.data;
+      const { token } = response.data;
       
       localStorage.setItem('authToken', token);
       document.cookie = `authToken=${token}; path=/; max-age=604800; samesite=lax`;
@@ -55,13 +55,13 @@ export function LoginForm() {
         description: "Bienvenue !",
       });
 
-      if (message && message.includes("Email not verified")) {
-          toast({
-            title: "Vérification de l'e-mail requise",
-            description: "Veuillez vérifier votre e-mail pour activer toutes les fonctionnalités.",
-            duration: 5000,
-          });
-      }
+      // if (message && message.includes("Email not verified")) {
+      //     toast({
+      //       title: "Vérification de l'e-mail requise",
+      //       description: "Veuillez vérifier votre e-mail pour activer toutes les fonctionnalités.",
+      //       duration: 5000,
+      //     });
+      // }
 
       router.push("/dashboard");
       router.refresh();
