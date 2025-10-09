@@ -6,15 +6,20 @@
 // This file is kept to prevent breaking existing links until they are updated.
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 export default function DeprecatedBuyPage() {
   const router = useRouter();
+  const params = useParams();
+  const providerId = params.providerId;
 
   useEffect(() => {
+    // We redirect to the new unified buy flow.
+    // We can't pass state, so the user will have to re-select the provider.
+    // This is an acceptable trade-off for deprecating the old flow.
     router.replace('/buy');
-  }, [router]);
+  }, [router, providerId]);
 
   return (
     <div className="flex h-full w-full items-center justify-center">
@@ -28,5 +33,3 @@ export default function DeprecatedBuyPage() {
     </div>
   );
 }
-
-    
