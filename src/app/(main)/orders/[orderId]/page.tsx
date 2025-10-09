@@ -489,10 +489,10 @@ export default function OrderDetailsPage() {
                                     Commande d'{order.direction === 'buy' ? 'Achat' : 'Vente'} #{order.id}
                                 </CardTitle>
                                 <CardDescription>
-                                    <div className="flex items-center gap-2">
+                                    <span className="flex items-center gap-2">
                                         <span>le {new Date(order.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric'})}</span>
                                         <Badge variant="outline" className="capitalize">{order.payment_method.replace('_', '-')}</Badge>
-                                    </div>
+                                    </span>
                                 </CardDescription>
                            </div>
                         </div>
