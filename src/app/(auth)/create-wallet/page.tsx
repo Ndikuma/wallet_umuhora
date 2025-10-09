@@ -19,7 +19,7 @@ export default function CreateWalletPage() {
     setLoading(true);
     setError(null);
     try {
-      await api.createWallet(); // <-- Your API POST endpoint
+      await api.createWallet("idris"); // <-- Your API POST endpoint
       setWalletCreated(true);
       toast({
         title: "Portefeuille créé",
