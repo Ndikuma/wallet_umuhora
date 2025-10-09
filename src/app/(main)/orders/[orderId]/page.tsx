@@ -311,18 +311,59 @@ function LightningSellOrderDetails({ order, onOrderUpdate }: { order: Order, onO
     const [isPaying, setIsPaying] = useState(false);
     const { toast } = useToast();
 
+     useEffect(() => {
+        if (order.status === 'completed' || order.status === 'awaiting_confirmation') {
+            return;
+        }
+
+        const intervalId = setInterval(async () => {
+            try {
+                const response = await api.getOrder(order.id);
+                 if (response.data.status === 'completed' || response.data.status === 'awaiting_confirmation') {
+                    onOrderUpdate(response.data);
+                    clearInterval(intervalId);
+                }
+            } catch (error) {
+                // Silent error
+            }
+        }, 5000); // Poll every 5 seconds
+
+        return () => clearInterval(intervalId);
+    }, [order, onOrderUpdate]);
+
+
     const handlePay = async () => {
         if (!order.ln_invoice) return;
         setIsPaying(true);
         try {
             const response = await api.payLightningInvoice({ request: order.ln_invoice, type: 'invoice' });
             onOrderUpdate(response.data.order);
-            toast({ title: "Paiement réussi", description: `Vous avez payé ${response.data.amount_sats} sats.` });
+            toast({ title: "Paiement réussi", description: `Vous avez payé ${response.data.amount_sats} sats. Le statut de la commande va se mettre à jour.` });
         } catch (err: any) {
             toast({ variant: 'destructive', title: 'Échec du paiement', description: err.message });
         } finally {
             setIsPaying(false);
         }
+    }
+
+    if (order.status === 'awaiting_confirmation') {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Hourglass className="size-5 text-primary" />Paiement en cours de traitement</CardTitle>
+                    <CardDescription>Votre paiement a été envoyé et est en cours de traitement par le fournisseur.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Alert>
+                        <Clock className="h-4 w-4 animate-pulse" />
+                        <AlertTitle>En attente de confirmation</AlertTitle>
+                        <AlertDescription>
+                            Vous serez notifié lorsque le fournisseur aura confirmé la réception des fonds et finalisé la transaction.
+                        </AlertDescription>
+                    </Alert>
+                </CardContent>
+            </Card>
+        )
     }
 
     return (
@@ -570,9 +611,9 @@ export default function OrderDetailsPage() {
 
             {order.direction === 'buy' && isLightning && order.status === 'pending' && <LightningBuyOrderDetails order={order} onOrderUpdate={setOrder} />}
 
-            {order.direction === 'sell' && isLightning && order.status === 'pending' && <LightningSellOrderDetails order={order} onOrderUpdate={setOrder} />}
+            {order.direction === 'sell' && isLightning && ['pending', 'awaiting_confirmation'].includes(order.status) && <LightningSellOrderDetails order={order} onOrderUpdate={setOrder} />}
 
-            {order.status === 'awaiting_confirmation' && (
+            {order.status === 'awaiting_confirmation' && !isLightning && (
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Hourglass className="size-5 text-primary" />En attente de confirmation</CardTitle>
