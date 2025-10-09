@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 
@@ -56,7 +56,8 @@ export default function CreateWalletPage() {
             </Alert>
           )}
           {walletCreated && (
-            <Alert variant="default" className="mb-4 border-green-500 bg-green-50 text-green-700">
+            <Alert variant="success" className="mb-4">
+              <CheckCircle2 className="h-4 w-4" />
               <AlertTitle>Succès</AlertTitle>
               <AlertDescription>Votre portefeuille a été créé avec succès.</AlertDescription>
             </Alert>
