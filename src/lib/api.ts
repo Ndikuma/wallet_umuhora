@@ -106,7 +106,7 @@ const getUser = (): Promise<AxiosResponse<User>> => axiosInstance.get('user/me/'
 // --- Wallet ---
 const getWallets = (): Promise<AxiosResponse<Wallet[]>> => axiosInstance.get('wallet/');
 const getWalletBalance = (): Promise<AxiosResponse<Balance>> => axiosInstance.get('wallet/balance/');
-const createWallet = (mnemonic: string): Promise<AxiosResponse<any>> => axiosInstance.post('wallet/create_wallet/', { mnemonic });
+const createWallet = (mnemonic?: string): Promise<AxiosResponse<any>> => axiosInstance.post('wallet/create_wallet/', { mnemonic });
 const generateNewAddress = (): Promise<AxiosResponse<{ address: string }>> => axiosInstance.post('wallet/generate_address/');
 const generateQrCode = (data: string): Promise<AxiosResponse<{ qr_code: string }>> => axiosInstance.post('wallet/generate_qr_code/', { data });
 
