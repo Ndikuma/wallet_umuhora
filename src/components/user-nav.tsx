@@ -7,7 +7,8 @@ import {
   Settings,
   User as UserIcon,
   ChevronDown,
-  LifeBuoy
+  LifeBuoy,
+  MoreVertical
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -21,11 +22,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
-import { useEffect, useState, useCallback } from "react"
-import api from "@/lib/api"
-import type { User } from "@/lib/types"
-import { Skeleton } from "./ui/skeleton";
 import { useUser } from "@/hooks/use-user";
+import { Skeleton } from "./ui/skeleton";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 
 export function UserNav() {
   const router = useRouter();
@@ -46,10 +45,17 @@ export function UserNav() {
     }
   }
 
+  const getInitials = () => {
+      if (!user) return "";
+      const firstNameInitial = user.first_name?.[0] || '';
+      const lastNameInitial = user.last_name?.[0] || '';
+      return `${firstNameInitial}${lastNameInitial}`.toUpperCase() || user.username?.[0].toUpperCase();
+  }
+
   const displayName = user?.full_name || user?.username;
 
   if (isLoading) {
-    return <Skeleton className="h-9 w-28" />;
+    return <Skeleton className="h-9 w-9 rounded-full" />;
   }
 
   if (!user) {
@@ -63,11 +69,10 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2 h-9">
-          <span>
-            {displayName}
-            <ChevronDown className="size-4 text-muted-foreground inline-block ml-1" />
-          </span>
+        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+            <Avatar className="h-9 w-9">
+                <AvatarFallback>{getInitials()}</AvatarFallback>
+            </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>

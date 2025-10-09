@@ -86,6 +86,18 @@ export function MainNav() {
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton
+                        asChild
+                        isActive={isRouteActive("/transactions")}
+                        tooltip={"Transactions"}
+                    >
+                        <Link href="/transactions">
+                            <History />
+                            <span className="group-data-[collapsible=icon]:hidden">Transactions</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
             </SidebarMenu>
         </SidebarGroup>
         
@@ -126,18 +138,6 @@ export function MainNav() {
                         <Link href="/orders">
                             <History />
                             <span className="group-data-[collapsible=icon]:hidden">Commandes</span>
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <SidebarMenuButton
-                        asChild
-                        isActive={isRouteActive("/transactions")}
-                        tooltip={"Transactions"}
-                    >
-                        <Link href="/transactions">
-                            <History />
-                            <span className="group-data-[collapsible=icon]:hidden">Transactions</span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
