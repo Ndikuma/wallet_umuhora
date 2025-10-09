@@ -101,6 +101,7 @@ export function VerifyEmailComponent() {
           router.push("/lightning");
         }
       } else {
+         // After initial registration, go to lightning page
          router.push("/lightning");
       }
       router.refresh();

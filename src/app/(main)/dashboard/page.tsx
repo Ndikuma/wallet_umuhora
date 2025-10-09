@@ -138,18 +138,13 @@ export default function DashboardPage() {
           <Wallet className="size-16 text-primary" />
           <CardTitle>Bienvenue sur votre portefeuille On-Chain</CardTitle>
           <CardDescription className="max-w-md">
-            Vous n'avez pas encore de portefeuille on-chain. Créez-en un nouveau ou restaurez un portefeuille existant pour commencer à gérer vos Bitcoins.
+            Il semble que vous n'ayez pas encore de portefeuille on-chain. Créez-en un pour commencer à gérer vos Bitcoins.
           </CardDescription>
           <div className="flex gap-4 pt-4">
-            <Button asChild size="lg">
-              <Link href="/create-wallet">
+            <Button asChild size="lg" onClick={async () => await api.createWallet('')}>
+              <Link href="/dashboard">
                 <PlusCircle className="mr-2"/>
-                Créer un Portefeuille
-              </Link>
-            </Button>
-             <Button asChild variant="secondary" size="lg">
-              <Link href="/restore-wallet">
-                Restaurer
+                Créer un Portefeuille On-Chain
               </Link>
             </Button>
           </div>

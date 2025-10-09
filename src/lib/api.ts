@@ -106,12 +106,9 @@ const getUser = (): Promise<AxiosResponse<User>> => axiosInstance.get('user/me/'
 // --- Wallet ---
 const getWallets = (): Promise<AxiosResponse<Wallet[]>> => axiosInstance.get('wallet/');
 const getWalletBalance = (): Promise<AxiosResponse<Balance>> => axiosInstance.get('wallet/balance/');
-const generateMnemonic = (): Promise<AxiosResponse<{ mnemonic: string }>> => axiosInstance.post('wallet/generate_mnemonic/');
-const createWallet = (mnemonic: string) => axiosInstance.post('wallet/create_wallet/', { mnemonic });
+const createWallet = (mnemonic: string): Promise<AxiosResponse<any>> => axiosInstance.post('wallet/create_wallet/', { mnemonic });
 const generateNewAddress = (): Promise<AxiosResponse<{ address: string }>> => axiosInstance.post('wallet/generate_address/');
 const generateQrCode = (data: string): Promise<AxiosResponse<{ qr_code: string }>> => axiosInstance.post('wallet/generate_qr_code/', { data });
-const restoreWallet = (data: string): Promise<AxiosResponse<any>> => axiosInstance.post('wallet/restore/', { data });
-const backupWallet = (): Promise<AxiosResponse<{ wif: string }>> => axiosInstance.get('wallet/backup/');
 
 const estimateFee = (payload: { amount: string }): Promise<AxiosResponse<FeeEstimation>> => {
     return axiosInstance.post('wallet/estimate_fee/', payload);
@@ -187,12 +184,9 @@ const api = {
     getUser,
     getWallets,
     getWalletBalance,
-    generateMnemonic,
     createWallet,
     generateNewAddress,
     generateQrCode,
-    restoreWallet,
-    backupWallet,
     getTransactions,
     getRecentTransactions,
     sendTransaction,

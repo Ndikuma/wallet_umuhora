@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -34,7 +35,7 @@ function HeroSection() {
             <Link href="/register">Créer un Nouveau Portefeuille</Link>
           </Button>
           <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto hover:scale-105 transition-transform">
-            <Link href="/restore-wallet">Restaurer un Portefeuille</Link>
+            <Link href="/login">Accéder à mon portefeuille</Link>
           </Button>
         </div>
       </div>

@@ -34,12 +34,6 @@ export default function RegisterPage() {
               Se connecter
             </Link>
           </div>
-           <div className="mt-2 text-center text-sm">
-            Vous voulez restaurer un portefeuille existant ?{" "}
-            <Link href="/restore-wallet" className="font-semibold text-primary underline-offset-4 hover:underline">
-              Restaurer maintenant
-            </Link>
-          </div>
         </CardContent>
       </Card>
     </div>

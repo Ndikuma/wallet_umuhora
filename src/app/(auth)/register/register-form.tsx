@@ -46,10 +46,10 @@ export function RegisterForm() {
     try {
       await api.register(values);
       toast({
-        title: "Compte créé",
-        description: "Un code de vérification a été envoyé à votre e-mail.",
+        title: "Compte créé avec succès",
+        description: "Vous pouvez maintenant vous connecter. Veuillez vérifier votre e-mail pour activer toutes les fonctionnalités.",
       });
-      router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
+      router.push(`/login`);
     } catch (error: any) {
        const errorDetails = error.response?.data?.error?.details;
        let errorMsg = "Une erreur inattendue est survenue.";

@@ -67,6 +67,7 @@ export function LoginForm() {
         if (wallet_created) {
           router.push("/dashboard");
         } else {
+          // If no wallet, redirect to lightning page as the new starting point.
           router.push("/lightning");
         }
         router.refresh();

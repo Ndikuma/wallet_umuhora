@@ -51,19 +51,6 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useUser } from "@/hooks/use-user";
 
-const restoreFormSchema = z.object({
-  data: z.string().min(20, { message: "Les données de restauration semblent trop courtes." })
-    .refine(value => {
-        const trimmed = value.trim();
-        const wordCount = trimmed.split(/\s+/).length;
-        const isMnemonic = wordCount === 12 || wordCount === 24;
-        const isWif = (trimmed.startsWith('L') || trimmed.startsWith('K') || trimmed.startsWith('5'));
-        const isExtendedKey = /^(xpub|ypub|zpub|tpub|upub|vpub)/.test(trimmed);
-        
-        return isMnemonic || isWif || isExtendedKey;
-    }, "Veuillez entrer une phrase mnémonique valide de 12/24 mots ou une clé privée WIF/étendue."),
-});
-
 const passwordChangeSchema = z.object({
   current_password: z.string().min(1, "Le mot de passe actuel est requis."),
   new_password: z.string().min(8, "Le nouveau mot de passe doit contenir au moins 8 caractères."),
@@ -75,49 +62,11 @@ export function SettingsClient() {
   const { user, refetchUser } = useUser();
   const { settings, setCurrency, setDisplayUnit, setTheme } = useSettings();
   
-  const [wif, setWif] = useState<string | null>(null);
-  const [isBackupLoading, setIsBackupLoading] = useState(false);
-  const [isBackupDialogOpen, setIsBackupDialogOpen] = useState(false);
-  
-  const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(false);
-  
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
-  const restoreForm = useForm<z.infer<typeof restoreFormSchema>>({ resolver: zodResolver(restoreFormSchema), defaultValues: { data: "" } });
   const passwordForm = useForm<z.infer<typeof passwordChangeSchema>>({ resolver: zodResolver(passwordChangeSchema), defaultValues: { current_password: "", new_password: "" } });
-
-  const handleBackup = async () => {
-    setIsBackupLoading(true);
-    setIsBackupDialogOpen(true);
-    try {
-        const response = await api.backupWallet();
-        setWif(response.data.wif);
-    } catch(error: any) {
-        toast({ variant: "destructive", title: "Échec de la sauvegarde", description: error.message });
-        setIsBackupDialogOpen(false);
-    } finally {
-        setIsBackupLoading(false);
-    }
-  };
-
-  const closeBackupDialog = () => { setIsBackupDialogOpen(false); setWif(null); }
-
-  const handleRestoreSubmit = async (values: z.infer<typeof restoreFormSchema>) => {
-    setIsRestoring(true);
-    try {
-      await api.restoreWallet(values.data);
-      toast({ title: "Restauration du portefeuille lancée", description: "Votre portefeuille est en cours de restauration. L'application va se rafraîchir." });
-      setTimeout(() => window.location.reload(), 2000);
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Échec de la restauration", description: error.message });
-    } finally {
-      setIsRestoring(false);
-      setIsRestoreDialogOpen(false);
-    }
-  }
 
   const handlePasswordChange = async (values: z.infer<typeof passwordChangeSchema>) => {
     setIsChangingPassword(true);
@@ -266,97 +215,8 @@ export function SettingsClient() {
                 </form>
              </Form>
           </div>
-          <div className="flex flex-col items-start justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
-            <div className="space-y-1">
-              <p className="font-semibold">Sauvegarder le Portefeuille</p>
-              <p className="text-sm text-muted-foreground">Affichez votre clé privée WIF. Sauvegardez-la dans un endroit sûr et hors ligne.</p>
-            </div>
-            <Button onClick={handleBackup} className="w-full sm:w-auto" disabled={isBackupLoading}>
-              {isBackupLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Sauvegarder maintenant
-            </Button>
-          </div>
-          <div className="flex flex-col items-start justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
-            <div className="space-y-1">
-              <p className="font-semibold">Restaurer le Portefeuille</p>
-              <p className="text-sm text-muted-foreground">Restaurez à partir d'une phrase mnémonique ou d'une clé privée WIF.</p>
-            </div>
-            <AlertDialog open={isRestoreDialogOpen} onOpenChange={setIsRestoreDialogOpen}>
-                <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-auto">Restaurer</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Restaurer Votre Portefeuille</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Entrez votre phrase mnémonique de 12/24 mots ou votre clé privée WIF. Cela remplacera le portefeuille actuel de ce compte.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <Form {...restoreForm}>
-                        <form onSubmit={restoreForm.handleSubmit(handleRestoreSubmit)} className="space-y-4">
-                            <FormField
-                                control={restoreForm.control}
-                                name="data"
-                                render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Données de Restauration</FormLabel>
-                                      <FormControl>
-                                        <Textarea
-                                          placeholder="Entrez votre phrase mnémonique ou clé WIF..."
-                                          className="resize-none"
-                                          rows={4}
-                                          {...field}
-                                        />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <AlertDialogFooter className="pt-2">
-                                <Button type="button" variant="ghost" onClick={() => setIsRestoreDialogOpen(false)} disabled={isRestoring}>Annuler</Button>
-                                <Button type="submit" disabled={isRestoring}>
-                                    {isRestoring ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                    {isRestoring ? "Restauration..." : "Restaurer le portefeuille"}
-                                </Button>
-                            </AlertDialogFooter>
-                        </form>
-                    </Form>
-                </AlertDialogContent>
-            </AlertDialog>
-          </div>
         </CardContent>
       </Card>
-
-      {/* Backup Dialog */}
-      <AlertDialog open={isBackupDialogOpen} onOpenChange={setIsBackupDialogOpen}>
-          <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>Votre Clé Privée de Portefeuille (WIF)</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      C'est votre clé privée. Elle donne un accès complet à vos fonds.
-                      Gardez-la secrète et sauvegardez-la dans un endroit sûr et hors ligne.
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="space-y-4">
-                <Alert variant="destructive">
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Avertissement de Sécurité</AlertTitle>
-                    <AlertDescription>
-                        Ne partagez jamais cette clé avec qui que ce soit. Toute personne ayant cette clé peut voler vos fonds.
-                    </AlertDescription>
-                </Alert>
-                <div className="rounded-lg border bg-secondary p-4 text-center font-code break-all">
-                    {isBackupLoading ? <Skeleton className="h-5 w-4/5 mx-auto" /> : wif}
-                </div>
-              </div>
-              <AlertDialogFooter className="pt-4 sm:gap-2 gap-4 flex-col sm:flex-row">
-                  <Button variant="outline" onClick={closeBackupDialog} className="mt-0 w-full sm:w-auto">Fermer</Button>
-                  <CopyButton textToCopy={wif || ''} disabled={isBackupLoading || !wif} toastMessage="Clé privée copiée" onCopy={closeBackupDialog} className="w-full sm:w-auto">
-                    Copier la clé & Fermer
-                   </CopyButton>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
