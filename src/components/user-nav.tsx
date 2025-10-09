@@ -25,27 +25,11 @@ import { useEffect, useState, useCallback } from "react"
 import api from "@/lib/api"
 import type { User } from "@/lib/types"
 import { Skeleton } from "./ui/skeleton";
+import { useUser } from "@/hooks/use-user";
 
 export function UserNav() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUser = useCallback(async () => {
-      setLoading(true);
-      try {
-        const response = await api.getUser();
-        setUser(response.data);
-      } catch (error) {
-        // This is expected if the user is not logged in, so we don't need to log an error.
-      } finally {
-        setLoading(false);
-      }
-    }, []);
-
-  useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+  const { user, isLoading } = useUser();
 
   const handleLogout = () => {
     try {
@@ -64,7 +48,7 @@ export function UserNav() {
 
   const displayName = user?.full_name || user?.username;
 
-  if (loading) {
+  if (isLoading) {
     return <Skeleton className="h-9 w-28" />;
   }
 
