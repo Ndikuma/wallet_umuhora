@@ -34,7 +34,7 @@ export function MobileNav() {
     { href: "/dashboard", icon: Bitcoin, label: "On-chain" },
     receiveAction,
     { href: "/orders", icon: Receipt, label: "Commandes" },
-    { href: "/profile", icon: User, label: "Profil" },
+    { href: "/lightning", icon: Zap, label: "Lightning" },
   ];
 
   return (
